@@ -168,6 +168,7 @@ namespace GitVersionTree
             string[] MergedParents;
 
             Status("Getting git commit(s) ...");
+            // %h: abbr commit hash, %p: abbr parent hashes, %d: ref names (tag, branch names)
             Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --all --pretty=format:\"%h|%p|%d\"");
             if (String.IsNullOrEmpty(Result))
             {
@@ -202,51 +203,47 @@ namespace GitVersionTree
                 string[] RefLines = Result.Split('\n');
                 foreach (string RefLine in RefLines)
                 {
-                    if (!String.IsNullOrEmpty(RefLine))
+                    if (String.IsNullOrEmpty(RefLine)) continue;
+                
+                    string[] RefColumns = RefLine.Split('|');
+                    if ( !RefColumns[1].ToLower().StartsWith("refs/tags") && 
+                         (RefColumns[1].ToLower().Equals("master") || RefColumns[1].ToLower().Contains("/master")) )
                     {
-                        string[] RefColumns = RefLine.Split('|');
-                        if (!RefColumns[1].ToLower().StartsWith("refs/tags"))
-                        if (RefColumns[1].ToLower().Contains("master"))
+                        Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + RefColumns[0]);
+                        if (String.IsNullOrEmpty(Result))
                         {
-                            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + RefColumns[0]);
-                            if (String.IsNullOrEmpty(Result))
-                            {
-                                Status("Unable to get commit(s) ...");
-                            }
-                            else
-                            {
-                                string[] HashLines = Result.Split('\n');
-                                Nodes.Add(new List<string>());
-                                foreach (string HashLine in HashLines)
-                                {
-                                    Nodes[Nodes.Count - 1].Add(HashLine);
-                                }
-                            }
+                            Status("Unable to get commit(s) ...");
+                            continue;
+                        }
+                    
+                        string[] HashLines = Result.Split('\n');
+                        Nodes.Add(new List<string>());
+                        foreach (string HashLine in HashLines)
+                        {
+                            Nodes[Nodes.Count - 1].Add(HashLine);
                         }
                     }
                 }
                 foreach (string RefLine in RefLines)
                 {
-                    if (!String.IsNullOrEmpty(RefLine))
+                    if (String.IsNullOrEmpty(RefLine)) continue;
+                
+                    string[] RefColumns = RefLine.Split('|');
+                    if (!RefColumns[1].ToLower().StartsWith("refs/tags") &&
+                        !RefColumns[1].ToLower().Contains("master"))
                     {
-                        string[] RefColumns = RefLine.Split('|');
-                        if (!RefColumns[1].ToLower().StartsWith("refs/tags"))
-                        if (!RefColumns[1].ToLower().Contains("master"))
+                        Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + RefColumns[0]);
+                        if (String.IsNullOrEmpty(Result))
                         {
-                            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + RefColumns[0]);
-                            if (String.IsNullOrEmpty(Result))
-                            {
-                                Status("Unable to get commit(s) ...");
-                            }
-                            else
-                            {
-                                string[] HashLines = Result.Split('\n');
-                                Nodes.Add(new List<string>());
-                                foreach (string HashLine in HashLines)
-                                {
-                                    Nodes[Nodes.Count - 1].Add(HashLine);
-                                }
-                            }
+                            Status("Unable to get commit(s) ...");
+                            continue;
+                        }
+                    
+                        string[] HashLines = Result.Split('\n');
+                        Nodes.Add(new List<string>());
+                        foreach (string HashLine in HashLines)
+                        {
+                            Nodes[Nodes.Count - 1].Add(HashLine);
                         }
                     }
                 }
@@ -267,26 +264,24 @@ namespace GitVersionTree
                 {
                     MergedColumns = MergedLine.Split('|');
                     MergedParents = MergedColumns[1].Split(' ');
-                    if (MergedParents.Length > 1)
+                    if (MergedParents.Length <= 1) continue;
+                
+                    for (int i = 1; i < MergedParents.Length; i++)
                     {
-                        for (int i = 1; i < MergedParents.Length; i++)
+                        Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + MergedParents[i]);
+                        if (String.IsNullOrEmpty(Result))
                         {
-                            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + MergedParents[i]);
-                            if (String.IsNullOrEmpty(Result))
-                            {
-                                Status("Unable to get commit(s) ...");
-                            }
-                            else
-                            {
-                                string[] HashLines = Result.Split('\n');
-                                Nodes.Add(new List<string>());
-                                foreach (string HashLine in HashLines)
-                                {
-                                    Nodes[Nodes.Count - 1].Add(HashLine);
-                                }
-                                Nodes[Nodes.Count - 1].Add(MergedColumns[0]);
-                            }
+                            Status("Unable to get commit(s) ...");
+                            continue;
                         }
+                    
+                        string[] HashLines = Result.Split('\n');
+                        Nodes.Add(new List<string>());
+                        foreach (string HashLine in HashLines)
+                        {
+                            Nodes[Nodes.Count - 1].Add(HashLine);
+                        }
+                        Nodes[Nodes.Count - 1].Add(MergedColumns[0]);
                     }
                 }
             }
@@ -344,14 +339,21 @@ namespace GitVersionTree
             DotProcess.StartInfo.CreateNoWindow = true;
             DotProcess.StartInfo.RedirectStandardOutput = true;
             DotProcess.StartInfo.FileName = GraphvizDotPathTextBox.Text;
-            DotProcess.StartInfo.Arguments = "\"" + @DotFilename + "\" -Tpdf -Gsize=10,10 -o\"" + @PdfFilename + "\"";
+            DotProcess.StartInfo.Arguments = $"\"{DotFilename}\" -Tpdf -Gsize=10,10 -o\"{PdfFilename}\"";
             DotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             DotProcess.Start();
             DotProcess.WaitForExit();
 
-            DotProcess.StartInfo.Arguments = "\"" + @DotFilename + "\" -Tps -o\"" + @PdfFilename.Replace(".pdf", ".ps") + "\"";
+            string PsFilename = PdfFilename.Replace(".pdf", ".ps");
+            DotProcess.StartInfo.Arguments = $"\"{DotFilename}\" -Tps -o\"{PsFilename}\"";
             DotProcess.Start();
             DotProcess.WaitForExit();
+
+            string SvgFilename = PdfFilename.Replace(".pdf", ".svg");
+            DotProcess.StartInfo.Arguments = $"\"{DotFilename}\" -Tsvg -o\"{SvgFilename}\"";
+            DotProcess.Start();
+            DotProcess.WaitForExit();
+
             if (DotProcess.ExitCode == 0)
             {
                 if (File.Exists(@PdfFilename))
