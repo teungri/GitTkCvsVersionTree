@@ -7,7 +7,7 @@ Lately I ended up with a master, hotfix, develop and 2 release product branches.
 The develop branch contained a lot of new functionality.
 The 2 product release branches contained a lot of improvements etc, while the develop branch lags a lot behind.
 Once the product release branches were ready, merging them into develop ended up in removing the new
-functionality into the develop branch.
+functionality from the develop branch.
 Eventually I had to cherry pick the commits from the release branches to get a decent develop branch.
 
 The rootcause of this problem was that a colleague branched new functionality from a wrong root branch by accident due
