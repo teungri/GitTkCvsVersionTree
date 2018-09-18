@@ -45,6 +45,9 @@
             this.StatusRichTextBox = new System.Windows.Forms.RichTextBox();
             this.GenerateButton = new System.Windows.Forms.Button();
             this.HomepageLinkLabel = new System.Windows.Forms.LinkLabel();
+            this.lblBrowserPath = new System.Windows.Forms.Label();
+            this.TxtBxBrowserPath = new System.Windows.Forms.TextBox();
+            this.BtBrowserPath = new System.Windows.Forms.Button();
             this.TargetPathGroupBox.SuspendLayout();
             this.PathConfigurationGroupBox.SuspendLayout();
             this.StatusGroupBox.SuspendLayout();
@@ -53,7 +56,7 @@
             // ExitButton
             // 
             this.ExitButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.ExitButton.Location = new System.Drawing.Point(404, 332);
+            this.ExitButton.Location = new System.Drawing.Point(781, 425);
             this.ExitButton.Name = "ExitButton";
             this.ExitButton.Size = new System.Drawing.Size(75, 23);
             this.ExitButton.TabIndex = 5;
@@ -68,9 +71,9 @@
             this.TargetPathGroupBox.Controls.Add(this.GitRepositoryPathTextBox);
             this.TargetPathGroupBox.Controls.Add(this.GitRepositoryPathBrowseButton);
             this.TargetPathGroupBox.Controls.Add(this.GitRepositoryPathLabel);
-            this.TargetPathGroupBox.Location = new System.Drawing.Point(12, 111);
+            this.TargetPathGroupBox.Location = new System.Drawing.Point(12, 140);
             this.TargetPathGroupBox.Name = "TargetPathGroupBox";
-            this.TargetPathGroupBox.Size = new System.Drawing.Size(467, 56);
+            this.TargetPathGroupBox.Size = new System.Drawing.Size(844, 53);
             this.TargetPathGroupBox.TabIndex = 1;
             this.TargetPathGroupBox.TabStop = false;
             this.TargetPathGroupBox.Text = "Target Path";
@@ -82,13 +85,13 @@
             this.GitRepositoryPathTextBox.Location = new System.Drawing.Point(120, 21);
             this.GitRepositoryPathTextBox.Name = "GitRepositoryPathTextBox";
             this.GitRepositoryPathTextBox.ReadOnly = true;
-            this.GitRepositoryPathTextBox.Size = new System.Drawing.Size(251, 20);
+            this.GitRepositoryPathTextBox.Size = new System.Drawing.Size(628, 20);
             this.GitRepositoryPathTextBox.TabIndex = 1;
             // 
             // GitRepositoryPathBrowseButton
             // 
             this.GitRepositoryPathBrowseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.GitRepositoryPathBrowseButton.Location = new System.Drawing.Point(377, 19);
+            this.GitRepositoryPathBrowseButton.Location = new System.Drawing.Point(754, 19);
             this.GitRepositoryPathBrowseButton.Name = "GitRepositoryPathBrowseButton";
             this.GitRepositoryPathBrowseButton.Size = new System.Drawing.Size(75, 23);
             this.GitRepositoryPathBrowseButton.TabIndex = 2;
@@ -109,6 +112,9 @@
             // 
             this.PathConfigurationGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.PathConfigurationGroupBox.Controls.Add(this.BtBrowserPath);
+            this.PathConfigurationGroupBox.Controls.Add(this.TxtBxBrowserPath);
+            this.PathConfigurationGroupBox.Controls.Add(this.lblBrowserPath);
             this.PathConfigurationGroupBox.Controls.Add(this.GraphvizDotPathBrowseButton);
             this.PathConfigurationGroupBox.Controls.Add(this.GitPathBrowseButton);
             this.PathConfigurationGroupBox.Controls.Add(this.GraphvizDotPathTextBox);
@@ -117,7 +123,7 @@
             this.PathConfigurationGroupBox.Controls.Add(this.GitPathLabel);
             this.PathConfigurationGroupBox.Location = new System.Drawing.Point(12, 12);
             this.PathConfigurationGroupBox.Name = "PathConfigurationGroupBox";
-            this.PathConfigurationGroupBox.Size = new System.Drawing.Size(467, 85);
+            this.PathConfigurationGroupBox.Size = new System.Drawing.Size(844, 122);
             this.PathConfigurationGroupBox.TabIndex = 0;
             this.PathConfigurationGroupBox.TabStop = false;
             this.PathConfigurationGroupBox.Text = "Path Configuration";
@@ -125,7 +131,7 @@
             // GraphvizDotPathBrowseButton
             // 
             this.GraphvizDotPathBrowseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.GraphvizDotPathBrowseButton.Location = new System.Drawing.Point(377, 48);
+            this.GraphvizDotPathBrowseButton.Location = new System.Drawing.Point(754, 48);
             this.GraphvizDotPathBrowseButton.Name = "GraphvizDotPathBrowseButton";
             this.GraphvizDotPathBrowseButton.Size = new System.Drawing.Size(75, 23);
             this.GraphvizDotPathBrowseButton.TabIndex = 5;
@@ -136,7 +142,7 @@
             // GitPathBrowseButton
             // 
             this.GitPathBrowseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.GitPathBrowseButton.Location = new System.Drawing.Point(377, 21);
+            this.GitPathBrowseButton.Location = new System.Drawing.Point(754, 21);
             this.GitPathBrowseButton.Name = "GitPathBrowseButton";
             this.GitPathBrowseButton.Size = new System.Drawing.Size(75, 23);
             this.GitPathBrowseButton.TabIndex = 2;
@@ -151,17 +157,17 @@
             this.GraphvizDotPathTextBox.Location = new System.Drawing.Point(120, 50);
             this.GraphvizDotPathTextBox.Name = "GraphvizDotPathTextBox";
             this.GraphvizDotPathTextBox.ReadOnly = true;
-            this.GraphvizDotPathTextBox.Size = new System.Drawing.Size(251, 20);
+            this.GraphvizDotPathTextBox.Size = new System.Drawing.Size(628, 20);
             this.GraphvizDotPathTextBox.TabIndex = 4;
             // 
             // GitPathTextBox
             // 
             this.GitPathTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.GitPathTextBox.Location = new System.Drawing.Point(120, 23);
+            this.GitPathTextBox.Location = new System.Drawing.Point(120, 22);
             this.GitPathTextBox.Name = "GitPathTextBox";
             this.GitPathTextBox.ReadOnly = true;
-            this.GitPathTextBox.Size = new System.Drawing.Size(251, 20);
+            this.GitPathTextBox.Size = new System.Drawing.Size(628, 20);
             this.GitPathTextBox.TabIndex = 1;
             // 
             // GraphvizDotPathLabel
@@ -188,9 +194,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.StatusGroupBox.Controls.Add(this.StatusRichTextBox);
-            this.StatusGroupBox.Location = new System.Drawing.Point(12, 184);
+            this.StatusGroupBox.Location = new System.Drawing.Point(12, 199);
             this.StatusGroupBox.Name = "StatusGroupBox";
-            this.StatusGroupBox.Size = new System.Drawing.Size(467, 142);
+            this.StatusGroupBox.Size = new System.Drawing.Size(844, 220);
             this.StatusGroupBox.TabIndex = 2;
             this.StatusGroupBox.TabStop = false;
             this.StatusGroupBox.Text = "Status";
@@ -202,14 +208,14 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.StatusRichTextBox.Location = new System.Drawing.Point(6, 19);
             this.StatusRichTextBox.Name = "StatusRichTextBox";
-            this.StatusRichTextBox.Size = new System.Drawing.Size(455, 117);
+            this.StatusRichTextBox.Size = new System.Drawing.Size(832, 195);
             this.StatusRichTextBox.TabIndex = 0;
             this.StatusRichTextBox.Text = "";
             // 
             // GenerateButton
             // 
             this.GenerateButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.GenerateButton.Location = new System.Drawing.Point(12, 332);
+            this.GenerateButton.Location = new System.Drawing.Point(12, 425);
             this.GenerateButton.Name = "GenerateButton";
             this.GenerateButton.Size = new System.Drawing.Size(75, 23);
             this.GenerateButton.TabIndex = 3;
@@ -221,7 +227,7 @@
             // 
             this.HomepageLinkLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.HomepageLinkLabel.AutoSize = true;
-            this.HomepageLinkLabel.Location = new System.Drawing.Point(339, 337);
+            this.HomepageLinkLabel.Location = new System.Drawing.Point(716, 430);
             this.HomepageLinkLabel.Name = "HomepageLinkLabel";
             this.HomepageLinkLabel.Size = new System.Drawing.Size(59, 13);
             this.HomepageLinkLabel.TabIndex = 4;
@@ -229,11 +235,41 @@
             this.HomepageLinkLabel.Text = "Homepage";
             this.HomepageLinkLabel.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HomepageLinkLabel_LinkClicked);
             // 
+            // lblBrowserPath
+            // 
+            this.lblBrowserPath.AutoSize = true;
+            this.lblBrowserPath.Location = new System.Drawing.Point(38, 80);
+            this.lblBrowserPath.Name = "lblBrowserPath";
+            this.lblBrowserPath.Size = new System.Drawing.Size(76, 13);
+            this.lblBrowserPath.TabIndex = 6;
+            this.lblBrowserPath.Text = "Browser Path :";
+            // 
+            // TxtBxBrowserPath
+            // 
+            this.TxtBxBrowserPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TxtBxBrowserPath.Location = new System.Drawing.Point(120, 77);
+            this.TxtBxBrowserPath.Name = "TxtBxBrowserPath";
+            this.TxtBxBrowserPath.ReadOnly = true;
+            this.TxtBxBrowserPath.Size = new System.Drawing.Size(628, 20);
+            this.TxtBxBrowserPath.TabIndex = 7;
+            // 
+            // BtBrowserPath
+            // 
+            this.BtBrowserPath.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.BtBrowserPath.Location = new System.Drawing.Point(754, 75);
+            this.BtBrowserPath.Name = "BtBrowserPath";
+            this.BtBrowserPath.Size = new System.Drawing.Size(75, 23);
+            this.BtBrowserPath.TabIndex = 8;
+            this.BtBrowserPath.Text = "Browse";
+            this.BtBrowserPath.UseVisualStyleBackColor = true;
+            this.BtBrowserPath.Click += new System.EventHandler(this.BtBrowserPath_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(492, 366);
+            this.ClientSize = new System.Drawing.Size(869, 459);
             this.Controls.Add(this.HomepageLinkLabel);
             this.Controls.Add(this.GenerateButton);
             this.Controls.Add(this.StatusGroupBox);
@@ -241,9 +277,11 @@
             this.Controls.Add(this.TargetPathGroupBox);
             this.Controls.Add(this.ExitButton);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.IsMdiContainer = true;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Git TkCvs Version Tree";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.TargetPathGroupBox.ResumeLayout(false);
             this.TargetPathGroupBox.PerformLayout();
@@ -273,6 +311,9 @@
         private System.Windows.Forms.Button GitPathBrowseButton;
         private System.Windows.Forms.LinkLabel HomepageLinkLabel;
         private System.Windows.Forms.RichTextBox StatusRichTextBox;
+        private System.Windows.Forms.Button BtBrowserPath;
+        private System.Windows.Forms.TextBox TxtBxBrowserPath;
+        private System.Windows.Forms.Label lblBrowserPath;
     }
 }
 
