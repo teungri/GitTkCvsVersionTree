@@ -330,19 +330,47 @@ namespace GitVersionTree
             DotStringBuilder.Append("strict digraph \"" + RepositoryName + "\" {\r\n");
             // DotStringBuilder.Append("  splines=line rankdir=\"BT\";\r\n");
             DotStringBuilder.Append(" rankdir=\"BT\";\r\n");
+
+            HashSet<string> labels = new HashSet<string>();
             for (int i = 0; i < Nodes.Count; i++)
-            {
+            {   // make labels
+                 for (int j = 0; j < Nodes[i].Count; j++)
+                {
+                    string sha = Nodes[i][j];
+                    string ts = "xx";
+                    string branch = "Branch bla";
+                    if (sha.Split('|').Count() < 2)
+                    {
+                        if (dShaTimestamp.ContainsKey(sha))
+                        {
+                            ts = dShaTimestamp[sha].ToString();
+                        }
+                    }
+                    else
+                    {
+                        sha = sha.Split('|').ElementAt(0);
+                        if (dShaTimestamp.ContainsKey(sha))
+                        {
+                            ts = dShaTimestamp[sha].ToString();
+                        }
+                    }
+                    if (labels.Contains(sha)) continue;
+                    labels.Add(sha);
+                    DotStringBuilder.Append($"{sha} [label = \"{sha}\\n{ts}\\n{branch}\"];\r\n");
+                }
+            }
+
+            for (int i = 0; i < Nodes.Count; i++)
+            {   // make labels
+           
                 DotStringBuilder.Append("  node[group=\"" + (i + 1) + "\"];\r\n");
                 DotStringBuilder.Append("  ");
                 for (int j = 0; j < Nodes[i].Count; j++)
                 {
                     string sha = Nodes[i][j];
-                    if (sha.Split('|').Count() < 2)
+                    if (sha.Split('|').Count() >= 2)
                     {
-                        if (dShaTimestamp.ContainsKey(sha))
-                        {
-                            sha += $"|{dShaTimestamp[sha]}";
-                        }
+                        sha = sha.Split('|').ElementAt(0);
                     }
                     DotStringBuilder.Append("\"" + sha + "\"");
                     if (j < Nodes[i].Count - 1)
@@ -365,12 +393,9 @@ namespace GitVersionTree
                 DotStringBuilder.Append("  {\r\n");
                 DotStringBuilder.Append("    rank=\"same\";\r\n");
                 string sha = DecorateKeyValuePair.Key;
-                if (sha.Split('|').Count() < 2)
+                if (sha.Split('|').Count() >= 2)
                 {
-                    if (dShaTimestamp.ContainsKey(sha))
-                    {
-                        sha += $"|{dShaTimestamp[sha]}";
-                    }
+                    sha += sha.Split('|').ElementAt(0);
                 }
                 if (DecorateKeyValuePair.Value.Trim().Substring(0, 5) == "(tag:")
                 {
