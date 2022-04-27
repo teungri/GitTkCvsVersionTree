@@ -22,7 +22,10 @@ namespace GitVersionTree
         private string DotFilename = Directory.GetParent(Application.ExecutablePath) + @"\" + Application.ProductName + ".dot";
         private string PdfFilename = Directory.GetParent(Application.ExecutablePath) + @"\" + Application.ProductName + ".pdf";
         private string LogFilename = Directory.GetParent(Application.ExecutablePath) + @"\" + Application.ProductName + ".log";
-        string RepositoryName;
+        private string RepositoryName;
+
+        private Dictionary<string, List<string>> dChildParents = new Dictionary<string, List<string>>();
+        private Dictionary<string, List<string>> dParentChilds = new Dictionary<string, List<string>>();
 
         public MainForm()
         {
@@ -168,13 +171,56 @@ namespace GitVersionTree
             }
         }
 
+        private void BtBrowserPath_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog BrowseOpenFileDialog = new OpenFileDialog();
+            BrowseOpenFileDialog.Title = "Select Browser";
+            if (!String.IsNullOrEmpty(Reg.Read("BrowserPath")))
+            {
+                BrowseOpenFileDialog.InitialDirectory = Reg.Read("BrowserPath");
+            }
+            if (!String.IsNullOrEmpty(Reg.Read("BrowserExec")))
+            {
+                BrowseOpenFileDialog.FileName = Reg.Read("BrowserExec");
+            }
+            BrowseOpenFileDialog.Filter = "Bowser application |*.exe";
+            if (BrowseOpenFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                Reg.Write("BrowserPath", BrowseOpenFileDialog.InitialDirectory);
+                Reg.Write("BrowserExec", BrowseOpenFileDialog.FileName);
+                RefreshPath();
+            }
+        }
+
+        private void ParseParentChilds(string parent, string childs)
+        {
+            List<string> lstChilds = childs.Split(' ').ToList();
+
+            if (!dParentChilds.ContainsKey(parent))
+            {
+                dParentChilds.Add(parent, lstChilds);
+            } 
+            else dParentChilds[parent].AddRange(lstChilds);
+
+            foreach (string child in lstChilds)
+            {
+                if (!dChildParents.ContainsKey(child))
+                {
+                    dChildParents.Add(child, new List<string>() {parent} );
+                }
+                else dChildParents[child].Add(parent);
+            }
+        }
         private void Generate()
         {
             string Result;
             string[] MergedColumns;
             string[] MergedParents;
+            string gitRepoPath = Reg.Read("GitRepositoryPath") + "\\.git"; 
+            string gitExec = Reg.Read("GitPath"); 
+            string gitDir = $"--git-dir \"{gitRepoPath}\"";
 
-            Repository repository = new Repository(Reg.Read("GitRepositoryPath"));
+            Repository repository = new Repository(gitRepoPath);
 
             var commitFilter = new CommitFilter { SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time };
             var commits = repository.Commits.QueryBy(commitFilter).ToList();
@@ -185,13 +231,19 @@ namespace GitVersionTree
                 var bCommits = branch.Commits.ToList();
             }
 
+            string dateformat = "%Y-%m-%d %H:%M:%S";
+            
             Status("Getting git commit(s) ...");
             // %h: abbr commit hash, %p: abbr parent hashes, %d: ref names (tag, branch names)
-            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --all --pretty=format:\"%h|%p|%d|%cd|%s\" --date=format:\"%Y-%m-%d %H:%M:%S\"");
+            string gitcmd = $"{gitDir} log --all --pretty=format:\"%h|%p|%d|%cd|%s\" --date=format:\"{dateformat}\"";
+            Result = Execute(gitExec, gitcmd);
 
             Dictionary<string, DateTime> dShaTimestamp = new Dictionary<string, DateTime>();
             Dictionary<DateTime, string> dTimestampSha = new Dictionary<DateTime, string>();
             Dictionary<string, string> dShaMessage = new Dictionary<string, string>();
+
+            dChildParents = new Dictionary<string, List<string>>();
+            dParentChilds = new Dictionary<string, List<string>>();
 
             if (String.IsNullOrEmpty(Result))
             {
@@ -206,6 +258,7 @@ namespace GitVersionTree
                 foreach (string DecorateLine in DecorateLines)
                 {
                     MergedColumns = DecorateLine.Split('|');
+                    ParseParentChilds(MergedColumns[0], MergedColumns[1]);
                     DateTime dt = DateTime.ParseExact(MergedColumns.ElementAt(3), format, CultureInfo.InvariantCulture);
                     string sDt = dt.ToString("yyyy/MM/dd hh:mm");
                     string sha = MergedColumns[0];
@@ -213,6 +266,7 @@ namespace GitVersionTree
                     dShaTimestamp.Add(sha, dt);
                     dTimestampSha.Add(dt, sha);
                     dShaMessage.Add(sha, msg);
+
                     if (!String.IsNullOrEmpty(MergedColumns[2]))
                     {
                         DecorateDictionary.Add(MergedColumns[0], MergedColumns[2]);
@@ -222,13 +276,19 @@ namespace GitVersionTree
             }
 
             Status("Getting git all branches ...");
-            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" show-branch --all");
+            // string gitcmd = $"{gitDir} log --all --pretty=format:\"%h|%p|%d|%cd|%s\" --date=format:\"{dateformat}\"";
+            gitcmd = $"{gitDir} show-branch --all";
+            Result = Execute(gitExec, gitcmd);
             string[] lines = Result.Split('\n');
-            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" show-branch --all --sha1-name");
+            
+            gitcmd = $"{gitDir} show-branch --all --sha1-name";
+            Result = Execute(gitExec, gitcmd);
             lines = Result.Split('\n');
 
             Status("Getting git ref branch(es) ...");
-            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" for-each-ref --format=\"%(objectname:short)|%(refname:short)\" "); //refs/heads/
+            gitcmd = $"{gitDir} for-each-ref --format=\"%(objectname:short)|%(refname:short)\" ";
+            Result = Execute(gitExec, gitcmd);
+            
             if (String.IsNullOrEmpty(Result))
             {
                 Status("Unable to get get branch or branch empty ...");
@@ -246,7 +306,8 @@ namespace GitVersionTree
                     if (!RefColumns[1].ToLower().StartsWith("refs/tags") &&
                          (RefColumns[1].ToLower().Equals("master") || RefColumns[1].ToLower().Contains("/master")))
                     {
-                        Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + RefColumns[0]);
+                        gitcmd = $"{gitDir} log --reverse --first-parent --pretty=format:\"%h\" {RefColumns[0]}";
+                        Result = Execute(gitExec, gitcmd);
                         if (String.IsNullOrEmpty(Result))
                         {
                             Status("Unable to get commit(s) ...");
@@ -269,7 +330,7 @@ namespace GitVersionTree
                     if (!RefColumns[1].ToLower().StartsWith("refs/tags") &&
                         !RefColumns[1].ToLower().Contains("master"))
                     {
-                        Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + RefColumns[0]);
+                        Result = Execute(gitExec, gitcmd);
                         if (String.IsNullOrEmpty(Result))
                         {
                             Status("Unable to get commit(s) ...");
@@ -287,7 +348,8 @@ namespace GitVersionTree
             }
 
             Status("Getting git merged branch(es) ...");
-            Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --all --merges --pretty=format:\"%h|%p\"");
+            gitcmd = $"{gitDir} log --all --merges --pretty=format:\"%h|%p\"";
+            Result = Execute(gitExec, gitcmd);
             if (String.IsNullOrEmpty(Result))
             {
                 Status("Unable to get get branch or branch empty ...");
@@ -305,7 +367,8 @@ namespace GitVersionTree
 
                     for (int i = 1; i < MergedParents.Length; i++)
                     {
-                        Result = Execute(Reg.Read("GitPath"), "--git-dir \"" + Reg.Read("GitRepositoryPath") + "\\.git\" log --reverse --first-parent --pretty=format:\"%h\" " + MergedParents[i]);
+                        gitcmd = $"{gitDir} log --reverse --first-parent --pretty=format:\"%h\" {MergedParents[i]}";
+                        Result = Execute(gitExec, gitcmd);
                         if (String.IsNullOrEmpty(Result))
                         {
                             Status("Unable to get commit(s) ...");
@@ -331,47 +394,47 @@ namespace GitVersionTree
             // DotStringBuilder.Append("  splines=line rankdir=\"BT\";\r\n");
             DotStringBuilder.Append(" rankdir=\"BT\";\r\n");
 
-            HashSet<string> labels = new HashSet<string>();
-            for (int i = 0; i < Nodes.Count; i++)
-            {   // make labels
-                 for (int j = 0; j < Nodes[i].Count; j++)
-                {
-                    string sha = Nodes[i][j];
-                    string ts = "xx";
-                    string branch = "Branch bla";
-                    if (sha.Split('|').Count() < 2)
-                    {
-                        if (dShaTimestamp.ContainsKey(sha))
-                        {
-                            ts = dShaTimestamp[sha].ToString();
-                        }
-                    }
-                    else
-                    {
-                        sha = sha.Split('|').ElementAt(0);
-                        if (dShaTimestamp.ContainsKey(sha))
-                        {
-                            ts = dShaTimestamp[sha].ToString();
-                        }
-                    }
-                    if (labels.Contains(sha)) continue;
-                    labels.Add(sha);
-                    DotStringBuilder.Append($"{sha} [label = \"{sha}\\n{ts}\\n{branch}\"];\r\n");
-                }
-            }
+            // HashSet<string> labels = new HashSet<string>();
+            // for (int i = 0; i < Nodes.Count; i++)
+            // {   // make labels
+            //      for (int j = 0; j < Nodes[i].Count; j++)
+            //     {
+            //         string sha = Nodes[i][j];
+            //         string ts = "xx";
+            //         string branch = "Branch bla";
+            //         if (sha.Split('|').Count() < 2)
+            //         {
+            //             if (dShaTimestamp.ContainsKey(sha))
+            //             {
+            //                 ts = dShaTimestamp[sha].ToString();
+            //             }
+            //         }
+            //         else
+            //         {
+            //             sha = sha.Split('|').ElementAt(0);
+            //             if (dShaTimestamp.ContainsKey(sha))
+            //             {
+            //                 ts = dShaTimestamp[sha].ToString();
+            //             }
+            //         }
+            //         if (labels.Contains(sha)) continue;
+            //         labels.Add(sha);
+            //         DotStringBuilder.Append($"{sha} [label = \"{sha}\\n{ts}\\n{branch}\"];\r\n");
+            //     }
+            // }
 
             for (int i = 0; i < Nodes.Count; i++)
-            {   // make labels
-           
+            {
                 DotStringBuilder.Append("  node[group=\"" + (i + 1) + "\"];\r\n");
                 DotStringBuilder.Append("  ");
                 for (int j = 0; j < Nodes[i].Count; j++)
                 {
                     string sha = Nodes[i][j];
-                    if (sha.Split('|').Count() >= 2)
-                    {
-                        sha = sha.Split('|').ElementAt(0);
-                    }
+                    sha += $" | {dShaTimestamp[sha]}";
+                    // if (sha.Split('|').Count() >= 2)
+                    // {
+                    //     sha = sha.Split('|').ElementAt(0);
+                    // }
                     DotStringBuilder.Append("\"" + sha + "\"");
                     if (j < Nodes[i].Count - 1)
                     {
@@ -393,10 +456,11 @@ namespace GitVersionTree
                 DotStringBuilder.Append("  {\r\n");
                 DotStringBuilder.Append("    rank=\"same\";\r\n");
                 string sha = DecorateKeyValuePair.Key;
-                if (sha.Split('|').Count() >= 2)
-                {
-                    sha += sha.Split('|').ElementAt(0);
-                }
+                sha += $" | {dShaTimestamp[sha]}";
+                // if (sha.Split('|').Count() >= 2)
+                // {
+                //     sha += sha.Split('|').ElementAt(0);
+                // }
                 if (DecorateKeyValuePair.Value.Trim().Substring(0, 5) == "(tag:")
                 {
                     DotStringBuilder.Append($"    \"{DecorateKeyValuePair.Value.Trim()}\" [shape=\"box\", style=\"filled\", fillcolor=\"#ffffdd\"];\r\n");
@@ -433,23 +497,18 @@ namespace GitVersionTree
             DotProcess.Start();
             DotProcess.WaitForExit();
 
-            DotProcess.StartInfo.FileName = TxtBxBrowserPath.Text;
-            DotProcess.StartInfo.Arguments = $"{SvgFilename}";
-            DotProcess.Start();
-
             if (DotProcess.ExitCode == 0)
             {
-                if (File.Exists(@PdfFilename))
+                if (File.Exists(@SvgFilename))
                 {
-#if (!DEBUG)
-                    /*
-                    Process ViewPdfProcess = new Process();
-                    ViewPdfProcess.StartInfo.FileName = @PdfFilename;
-                    ViewPdfProcess.Start();
+// #if (!DEBUG)
+                    Process ViewSvgProcess = new Process();
+                    ViewSvgProcess.StartInfo.FileName = TxtBxBrowserPath.Text;
+                    ViewSvgProcess.StartInfo.Arguments = $"{SvgFilename}";
+                    ViewSvgProcess.Start();
                     //ViewPdfProcess.WaitForExit();
                     //Close();
-                    */
-#endif
+// #endif
                 }
             }
             else
@@ -460,25 +519,7 @@ namespace GitVersionTree
             Status("Done! ...");
         }
 
-        private void BtBrowserPath_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog BrowseOpenFileDialog = new OpenFileDialog();
-            BrowseOpenFileDialog.Title = "Select Browser";
-            if (!String.IsNullOrEmpty(Reg.Read("BrowserPath")))
-            {
-                BrowseOpenFileDialog.InitialDirectory = Reg.Read("BrowserPath");
-            }
-            if (!String.IsNullOrEmpty(Reg.Read("BrowserExec")))
-            {
-                BrowseOpenFileDialog.FileName = Reg.Read("BrowserExec");
-            }
-            BrowseOpenFileDialog.Filter = "Bowser application |*.exe";
-            if (BrowseOpenFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                Reg.Write("BrowserPath", BrowseOpenFileDialog.InitialDirectory);
-                Reg.Write("BrowserExec", BrowseOpenFileDialog.FileName);
-                RefreshPath();
-            }
-        }
+
+        
     } // class MainForm
 }
